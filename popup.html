@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            width: 300px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #favorites-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .favorite-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .favorite-item a {
+            color: #0645ad;
+            text-decoration: none;
+            flex-grow: 1;
+            margin-right: 8px;
+        }
+        .remove-btn {
+            color: #dc3545;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WikiFaves</h1>
+    <div id="favorites-list"></div>
+    <script src="popup.js"></script>
+</body>
+</html> 
