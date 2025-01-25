@@ -1,73 +1,138 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>WikiFaves</title>
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #ddd;
+            --hover-bg: #f5f5f5;
+            --link-color: #0645ad;
+            --meta-color: #666;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --border-color: #444;
+            --hover-bg: #2a2a2a;
+            --link-color: #6ea8fe;
+            --meta-color: #aaa;
+        }
+
         body {
             width: 500px;
             padding: 10px;
             font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
+
         .header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 10px;
         }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
         .header img {
             width: 32px;
             height: 32px;
             margin-right: 10px;
         }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+            color: var(--text-color);
+        }
+
         h1 {
             font-size: 18px;
             margin: 0;
+            color: var(--text-color);
         }
+
         .tabs {
             display: flex;
             margin-bottom: 15px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
         }
+
         .tab {
             padding: 8px 16px;
             cursor: pointer;
             border: none;
             background: none;
+            color: var(--text-color);
         }
+
         .tab.active {
             border-bottom: 2px solid #4285f4;
             color: #4285f4;
         }
+
         .sort-controls {
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--text-color);
         }
+
         select {
             padding: 4px;
             border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
         }
+
         #favorites-list, #history-list {
             max-height: 400px;
             overflow-y: auto;
         }
+
         .list-item {
             padding: 8px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
+        .list-item:hover {
+            background-color: var(--hover-bg);
+        }
+
         .list-item a {
-            color: #0645ad;
+            color: var(--link-color);
             text-decoration: none;
             flex-grow: 1;
             margin-right: 8px;
         }
+
+        .list-item a:hover {
+            text-decoration: underline;
+        }
+
         .list-item .meta {
             font-size: 0.8em;
-            color: #666;
+            color: var(--meta-color);
             margin-top: 4px;
         }
+
         .remove-btn {
             color: #dc3545;
             cursor: pointer;
@@ -75,6 +140,7 @@
             border: none;
             padding: 4px 8px;
         }
+
         .export-btn {
             background-color: #4285f4;
             color: white;
@@ -85,15 +151,19 @@
             margin-top: 10px;
             width: 100%;
         }
+
         .export-btn:hover {
             background-color: #357abd;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
+
         .restore-btn {
             color: #28a745;
             cursor: pointer;
@@ -102,16 +172,20 @@
             padding: 4px 8px;
             margin-right: 4px;
         }
+
         .trash-meta {
             font-style: italic;
-            color: #666;
+            color: var(--meta-color);
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="icons/icon48.png" alt="WikiFaves">
-        <h1>WikiFaves</h1>
+        <div class="header-left">
+            <img src="icons/icon48.png" alt="WikiFaves">
+            <h1>WikiFaves</h1>
+        </div>
+        <button class="theme-toggle" title="Toggle dark mode">🌙</button>
     </div>
     
     <div class="tabs">

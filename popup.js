@@ -1,3 +1,26 @@
+// Dark mode handling
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeToggle(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeToggle(newTheme);
+}
+
+function updateThemeToggle(theme) {
+    const toggle = document.querySelector('.theme-toggle');
+    if (toggle) {
+        toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
 // Tab switching
 function setupTabs() {
     const tabs = document.querySelectorAll('.tab');
@@ -369,6 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
     displayFavorites();
     displayHistory();
     displayTrash();
+    
+    // Initialize theme
+    initTheme();
+    document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
     
     // Setup sort change handlers
     document.getElementById('favorites-sort').addEventListener('change', displayFavorites);
