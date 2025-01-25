@@ -1,6 +1,6 @@
 const WIKIFAVES_CONFIG = {
     colors: {
-        starColor: '#FFD700'  // Gold color for the star
+        starColor: '#FFD700'  // Gold color for the "favorite" button
     },
     syncKeys: ['favorites'],  // Keys that should be synced
     version: '1.0.0'

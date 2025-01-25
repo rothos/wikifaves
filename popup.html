@@ -17,7 +17,7 @@
             --bg-color: #1a1a1a;
             --text-color: #ffffff;
             --border-color: #444;
-            --hover-bg: #2a2a2a;
+            --hover-bg: #222222;
             --link-color: #6ea8fe;
             --meta-color: #666;
         }
@@ -140,12 +140,31 @@
             margin-top: 4px;
         }
 
-        .remove-btn {
-            color: #dc3545;
+        .remove-btn, .restore-btn {
+            color: var(--text-color);
             cursor: pointer;
             background: none;
             border: none;
             padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 1.3em;
+        }
+
+        .remove-btn {
+            color: #dc3545;
+        }
+
+        .restore-btn {
+            color: #28a745;
+            margin-right: 4px;
+        }
+
+        .remove-btn:hover, .remove-btn:active {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+
+        .restore-btn:hover, .restore-btn:active {
+            background-color: rgba(53, 220, 73, 0.2);
         }
 
         .export-btn {
@@ -169,15 +188,6 @@
 
         .tab-content.active {
             display: block;
-        }
-
-        .restore-btn {
-            color: #28a745;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 4px 8px;
-            margin-right: 4px;
         }
 
         .trash-meta {
