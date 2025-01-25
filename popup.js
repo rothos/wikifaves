@@ -444,20 +444,78 @@ async function debug() {
     console.log(result);
 }
 
+// Save sort settings
+function saveSortSettings() {
+    const favoritesSort = document.getElementById('favorites-sort').value;
+    const historySort = document.getElementById('history-sort').value;
+    localStorage.setItem('favorites-sort', favoritesSort);
+    localStorage.setItem('history-sort', historySort);
+}
+
+// Load sort settings
+function loadSortSettings() {
+    const favoritesSort = localStorage.getItem('favorites-sort') || 'dateAdded';
+    const historySort = localStorage.getItem('history-sort') || 'recentlyVisited';
+    
+    document.getElementById('favorites-sort').value = favoritesSort;
+    document.getElementById('history-sort').value = historySort;
+}
+
+// Delete all data functionality
+function setupDeleteAllData() {
+    const deleteBtn = document.getElementById('delete-all-btn');
+    const confirmation = document.getElementById('delete-confirmation');
+    const input = document.getElementById('delete-confirmation-input');
+    const confirmBtn = document.getElementById('delete-confirm-btn');
+
+    deleteBtn.addEventListener('click', () => {
+        confirmation.classList.add('visible');
+    });
+
+    input.addEventListener('input', () => {
+        confirmBtn.disabled = input.value !== 'wikifaves';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+        if (input.value === 'wikifaves') {
+            await chrome.storage.local.clear();
+            await chrome.storage.sync.clear();
+            
+            // Reset UI
+            displayFavorites();
+            displayHistory();
+            displayTrash();
+            
+            // Hide confirmation
+            confirmation.classList.remove('visible');
+            input.value = '';
+            confirmBtn.disabled = true;
+        }
+    });
+}
+
 // Initialize popup
 document.addEventListener('DOMContentLoaded', () => {
     setupTabs();
+    loadSortSettings();
     displayFavorites();
     displayHistory();
     displayTrash();
+    setupDeleteAllData();
     
     // Initialize theme
     initTheme();
     document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
     
     // Setup sort change handlers
-    document.getElementById('favorites-sort').addEventListener('change', displayFavorites);
-    document.getElementById('history-sort').addEventListener('change', displayHistory);
+    document.getElementById('favorites-sort').addEventListener('change', () => {
+        displayFavorites();
+        saveSortSettings();
+    });
+    document.getElementById('history-sort').addEventListener('change', () => {
+        displayHistory();
+        saveSortSettings();
+    });
     
     // Setup export button
     document.getElementById('export-btn').addEventListener('click', exportData);

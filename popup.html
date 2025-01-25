@@ -68,6 +68,7 @@
             display: flex;
             margin-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
+            position: relative;
         }
 
         .tab {
@@ -81,6 +82,11 @@
         .tab.active {
             border-bottom: 2px solid #4285f4;
             color: #4285f4;
+        }
+
+        .tab[data-tab="manage"] {
+            position: absolute;
+            right: 0;
         }
 
         .sort-controls {
@@ -178,6 +184,63 @@
             font-style: italic;
             color: var(--meta-color);
         }
+
+        .delete-all-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .delete-all-btn:hover {
+            background-color: #c82333;
+        }
+
+        .delete-confirmation {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #dc3545;
+            border-radius: 4px;
+        }
+
+        .delete-confirmation.visible {
+            display: block;
+        }
+
+        .delete-confirmation input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .delete-confirmation button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .delete-confirmation button:disabled {
+            background-color: #dc354580;
+            cursor: not-allowed;
+        }
+
+        .warning-text {
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -193,6 +256,7 @@
         <button class="tab active" data-tab="favorites">Favorites</button>
         <button class="tab" data-tab="history">History</button>
         <button class="tab" data-tab="trash">Trash</button>
+        <button class="tab" data-tab="manage">Manage Data</button>
     </div>
 
     <div id="favorites-content" class="tab-content active">
@@ -225,10 +289,19 @@
         <div id="trash-list"></div>
     </div>
 
-    <div style="display: flex; justify-content: space-between;">
+    <div id="manage-content" class="tab-content">
         <button id="export-btn" class="export-btn">Export Data</button>
         <button id="import-btn" class="export-btn">Import (merge) data</button>
+        <button id="delete-all-btn" class="delete-all-btn">Delete All Data</button>
+        
+        <div id="delete-confirmation" class="delete-confirmation">
+            <p class="warning-text">Remember to export your data first, if you want it!</p>
+            <p>To confirm deletion, type "wikifaves" below:</p>
+            <input type="text" id="delete-confirmation-input" placeholder="Type 'wikifaves' to confirm">
+            <button id="delete-confirm-btn" disabled>Delete All Data</button>
+        </div>
     </div>
+
     <script src="config.js"></script>
     <script src="popup.js"></script>
 </body>
