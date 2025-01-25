@@ -3,7 +3,7 @@
 <head>
     <style>
         body {
-            width: 300px;
+            width: 400px;
             padding: 10px;
             font-family: Arial, sans-serif;
         }
@@ -11,22 +11,52 @@
             font-size: 18px;
             margin-bottom: 10px;
         }
-        #favorites-list {
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .tab.active {
+            border-bottom: 2px solid #4285f4;
+            color: #4285f4;
+        }
+        .sort-controls {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        select {
+            padding: 4px;
+            border-radius: 4px;
+        }
+        #favorites-list, #history-list {
             max-height: 400px;
             overflow-y: auto;
         }
-        .favorite-item {
+        .list-item {
             padding: 8px;
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .favorite-item a {
+        .list-item a {
             color: #0645ad;
             text-decoration: none;
             flex-grow: 1;
             margin-right: 8px;
+        }
+        .list-item .meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
         }
         .remove-btn {
             color: #dc3545;
@@ -35,11 +65,62 @@
             border: none;
             padding: 4px 8px;
         }
+        .export-btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .export-btn:hover {
+            background-color: #357abd;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <h1>WikiFaves</h1>
-    <div id="favorites-list"></div>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="favorites">Favorites</button>
+        <button class="tab" data-tab="history">History</button>
+    </div>
+
+    <div id="favorites-content" class="tab-content active">
+        <div class="sort-controls">
+            <label>Sort by:</label>
+            <select id="favorites-sort">
+                <option value="dateAdded">Date Added</option>
+                <option value="alpha">Alphabetically</option>
+                <option value="mostVisited">Most Visited</option>
+                <option value="recentlyVisited">Recently Visited</option>
+            </select>
+        </div>
+        <div id="favorites-list"></div>
+    </div>
+
+    <div id="history-content" class="tab-content">
+        <div class="sort-controls">
+            <label>Sort by:</label>
+            <select id="history-sort">
+                <option value="alpha">Alphabetically</option>
+                <option value="mostVisited">Most Visited</option>
+                <option value="firstVisited">First Visited</option>
+                <option value="recentlyVisited">Recently Visited</option>
+            </select>
+        </div>
+        <div id="history-list"></div>
+    </div>
+
+    <button id="export-btn" class="export-btn">Export Data</button>
     <script src="popup.js"></script>
 </body>
 </html> 

@@ -34,6 +34,53 @@ async function checkFavoriteStatus() {
     }
 }
 
+// Track page visit in history
+async function trackPageVisit() {
+    try {
+        const url = window.location.href;
+        const pageTitle = getPageTitleFromUrl(url);
+        if (!pageTitle) return;
+
+        const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
+        const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
+        const visitTime = new Date().toISOString();
+
+        // Get existing history
+        const result = await chrome.storage.sync.get('history');
+        const history = result.history || {};
+
+        // Check if this is a page reload
+        const performance = window.performance;
+        const navigationEntries = performance.getEntriesByType('navigation');
+        const isReload = navigationEntries.length > 0 && navigationEntries[0].type === 'reload';
+        
+        if (!isReload || !history[pageTitle]) {
+            if (!history[pageTitle]) {
+                history[pageTitle] = {
+                    url: canonicalUrl,
+                    displayTitle,
+                    visitCount: 1,
+                    firstVisit: visitTime,
+                    lastVisit: visitTime,
+                    visits: [visitTime]
+                };
+            } else {
+                history[pageTitle].visitCount++;
+                history[pageTitle].lastVisit = visitTime;
+                history[pageTitle].visits.push(visitTime);
+                // Keep only last 100 visits to prevent storage limits
+                if (history[pageTitle].visits.length > 100) {
+                    history[pageTitle].visits = history[pageTitle].visits.slice(-100);
+                }
+            }
+
+            await chrome.storage.sync.set({ history });
+        }
+    } catch (error) {
+        console.error('Failed to track page visit:', error);
+    }
+}
+
 // Add favorite button to the page
 async function addFavoriteButton() {
     const url = window.location.href;
@@ -94,7 +141,11 @@ async function addFavoriteButton() {
 
 // Initialize when page loads
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', addFavoriteButton);
+    document.addEventListener('DOMContentLoaded', () => {
+        addFavoriteButton();
+        trackPageVisit();
+    });
 } else {
     addFavoriteButton();
+    trackPageVisit();
 } 
