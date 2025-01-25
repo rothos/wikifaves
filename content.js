@@ -64,6 +64,7 @@ async function trackPageVisit() {
         
         if (!isReload || !history[pageTitle]) {
             if (!history[pageTitle]) {
+                console.log('Adding new page to history:', pageTitle);
                 history[pageTitle] = {
                     url: canonicalUrl,
                     displayTitle,
@@ -73,6 +74,7 @@ async function trackPageVisit() {
                     visits: [visitTime]
                 };
             } else {
+                console.log('Updating existing page in history:', pageTitle);
                 history[pageTitle].visitCount++;
                 history[pageTitle].lastVisit = visitTime;
                 history[pageTitle].visits.push(visitTime);
@@ -90,11 +92,14 @@ async function trackPageVisit() {
 }
 
 // Toggle favorite status
-async function toggleFavorite() {
+async function toggleFavorite(pageTitle) {
     try {
         const url = window.location.href;
-        const pageTitle = getPageTitleFromUrl(url);
-        if (!pageTitle) return;
+
+        if (!pageTitle) {
+            pageTitle = getPageTitleFromUrl(url);
+            if (!pageTitle) return;
+        }
 
         const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
         const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
@@ -219,4 +224,4 @@ if (document.readyState === 'loading') {
 } else {
     addFavoriteButton();
     trackPageVisit();
-} 
+}
