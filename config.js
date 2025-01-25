@@ -1,11 +1,9 @@
 const WIKIFAVES_CONFIG = {
     colors: {
-        starColor: '#FDD835'  // Yellow color
+        starColor: '#FFD700'  // Gold color for the star
     },
-    storage: {
-        syncKeys: ['syncedFavorites'],  // Keys that should be synced
-        version: '1.0'  // Used for migrations
-    }
+    syncKeys: ['favorites'],  // Keys that should be synced
+    version: '1.0.0'
 };
 
 if (typeof module !== 'undefined') {

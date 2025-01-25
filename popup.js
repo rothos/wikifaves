@@ -97,10 +97,7 @@ async function moveToTrash(itemKey, sourceType) {
 
             if (sourceType === 'favorites') {
                 // Update synced favorites
-                const syncResult = await chrome.storage.sync.get('syncedFavorites');
-                const syncedFavorites = syncResult.syncedFavorites || {};
-                delete syncedFavorites[itemKey];
-                await chrome.storage.sync.set({ syncedFavorites });
+                await chrome.storage.sync.set({ favorites: source });
                 
                 await notifyContentScript('unfavorited', { pageTitle: itemKey });
             }
@@ -138,12 +135,7 @@ async function restoreFromTrash(itemKey) {
 
             if (sourceType === 'favorites') {
                 // Update synced favorites
-                const syncResult = await chrome.storage.sync.get('syncedFavorites');
-                const syncedFavorites = syncResult.syncedFavorites || {};
-                syncedFavorites[itemKey] = {
-                    dateAdded: itemData.dateAdded
-                };
-                await chrome.storage.sync.set({ syncedFavorites });
+                await chrome.storage.sync.set({ favorites: source });
                 
                 await notifyContentScript('favorited', { pageTitle: itemKey });
             }

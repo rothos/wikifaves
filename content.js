@@ -101,12 +101,9 @@ async function toggleFavorite() {
         
         const result = await chrome.storage.local.get('favorites');
         const favorites = result.favorites || {};
-        const syncResult = await chrome.storage.sync.get('syncedFavorites');
-        const syncedFavorites = syncResult.syncedFavorites || {};
 
         if (favorites[pageTitle]) {
             delete favorites[pageTitle];
-            delete syncedFavorites[pageTitle];
             updateFavoriteButton(false);
         } else {
             const dateAdded = new Date().toISOString();
@@ -115,15 +112,12 @@ async function toggleFavorite() {
                 displayTitle,
                 dateAdded
             };
-            syncedFavorites[pageTitle] = {
-                dateAdded
-            };
             updateFavoriteButton(true);
         }
 
         await Promise.all([
             chrome.storage.local.set({ favorites }),
-            chrome.storage.sync.set({ syncedFavorites })
+            chrome.storage.sync.set({ favorites })
         ]);
 
         // Update context menu
