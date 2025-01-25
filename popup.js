@@ -111,6 +111,18 @@ async function moveToTrash(itemKey, sourceType) {
     }
 }
 
+async function deleteFromTrash(itemKey) {
+    try {
+        const result = await chrome.storage.local.get('trash');
+        const trash = result.trash || {};
+        delete trash[itemKey];
+        await chrome.storage.local.set({ trash });
+        displayList('trash');
+    } catch (error) {
+        console.error('Failed to delete item from trash:', error);
+    }
+}
+
 // Restore from trash
 async function restoreFromTrash(itemKey) {
     try {
@@ -242,10 +254,7 @@ function createItemElement(pageTitle, data, type) {
         removeBtn.className = 'remove-btn';
         removeBtn.innerHTML = '&times;';
         removeBtn.onclick = async () => {
-            const trash = items;
-            delete trash[pageTitle];
-            await chrome.storage.local.set({ trash });
-            displayList('trash');
+            await deleteFromTrash(pageTitle);
         };
         
         buttonContainer.appendChild(restoreBtn);

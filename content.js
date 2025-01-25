@@ -49,6 +49,14 @@ async function trackPageVisit() {
         const pageTitle = getPageTitleFromUrl(url);
         if (!pageTitle) return;
 
+        // Check to see if it's a redirect page be seeing if there is
+        // an element with the id "redirectsub"
+        const redirectSub = document.getElementById("redirectsub");
+        if (redirectSub) {
+            console.log("WikiFaves: Not tracking redirect page");
+            return;
+        }
+
         const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
         const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
         const visitTime = new Date().toISOString();
