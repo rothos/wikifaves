@@ -20,13 +20,18 @@ function getPageTitleFromUrl(url) {
 
 // Check if current page is already favorited
 async function checkFavoriteStatus() {
-    const url = window.location.href;
-    const pageTitle = getPageTitleFromUrl(url);
-    if (!pageTitle) return false;
-    
-    const result = await chrome.storage.sync.get('favorites');
-    const favorites = result.favorites || {};
-    return !!favorites[pageTitle];
+    try {
+        const url = window.location.href;
+        const pageTitle = getPageTitleFromUrl(url);
+        if (!pageTitle) return false;
+        
+        const result = await chrome.storage.sync.get('favorites');
+        const favorites = result.favorites || {};
+        return !!favorites[pageTitle];
+    } catch (error) {
+        console.error('Failed to check favorite status:', error);
+        return false;
+    }
 }
 
 // Add favorite button to the page
@@ -56,23 +61,29 @@ async function addFavoriteButton() {
 
     // Add click handler
     button.addEventListener('click', async () => {
-        const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
-        const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
-        const result = await chrome.storage.sync.get('favorites');
-        const favorites = result.favorites || {};
+        try {
+            const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
+            const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
+            const result = await chrome.storage.sync.get('favorites');
+            const favorites = result.favorites || {};
 
-        if (favorites[pageTitle]) {
-            delete favorites[pageTitle];
-            button.innerHTML = '☆ Add to Favorites';
-            button.style.backgroundColor = 'transparent';
-        } else {
-            favorites[pageTitle] = {
-                url: canonicalUrl,
-                displayTitle,
-                dateAdded: new Date().toISOString()
-            };
-            button.innerHTML = '★ Favorited';
-            button.style.backgroundColor = 'transparent';
+            if (favorites[pageTitle]) {
+                delete favorites[pageTitle];
+                button.innerHTML = '☆ Add to Favorites';
+                button.style.backgroundColor = 'transparent';
+            } else {
+                favorites[pageTitle] = {
+                    url: canonicalUrl,
+                    displayTitle,
+                    dateAdded: new Date().toISOString()
+                };
+                button.innerHTML = '★ Favorited';
+                button.style.backgroundColor = 'transparent';
+            }
+
+            await chrome.storage.sync.set({ favorites });
+        } catch (error) {
+            console.error('Failed to update favorites:', error);
         }
 
         await chrome.storage.sync.set({ favorites });
