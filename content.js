@@ -139,6 +139,26 @@ async function addFavoriteButton() {
     document.body.appendChild(button);
 }
 
+// Add message listener for popup updates
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const pageTitle = getPageTitleFromUrl(window.location.href);
+    if (!pageTitle) return;
+
+    if (message.action === 'unfavorited' && message.data.pageTitle === pageTitle) {
+        const button = document.getElementById('wikifaves-button');
+        if (button) {
+            button.innerHTML = '☆ Add to Favorites';
+            button.style.backgroundColor = 'transparent';
+        }
+    } else if (message.action === 'favorited' && message.data.pageTitle === pageTitle) {
+        const button = document.getElementById('wikifaves-button');
+        if (button) {
+            button.innerHTML = '★ Favorited';
+            button.style.backgroundColor = 'transparent';
+        }
+    }
+});
+
 // Initialize when page loads
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

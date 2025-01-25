@@ -37,6 +37,89 @@ function sortByRecentlyVisited(a, b) {
     return new Date(b[1].lastVisit) - new Date(a[1].lastVisit);
 }
 
+// Notify content script of changes
+async function notifyContentScript(action, data) {
+    try {
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: action,
+                data: data
+            });
+        }
+    } catch (error) {
+        console.error('Failed to notify content script:', error);
+    }
+}
+
+// Move item to trash
+async function moveToTrash(itemKey, sourceType) {
+    try {
+        const result = await chrome.storage.sync.get(['favorites', 'history', 'trash']);
+        const trash = result.trash || {};
+        const source = result[sourceType] || {};
+        
+        if (source[itemKey]) {
+            trash[itemKey] = {
+                ...source[itemKey],
+                sourceType,
+                trashDate: new Date().toISOString()
+            };
+            delete source[itemKey];
+            
+            await chrome.storage.sync.set({ 
+                [sourceType]: source,
+                trash: trash
+            });
+
+            if (sourceType === 'favorites') {
+                await notifyContentScript('unfavorited', { pageTitle: itemKey });
+            }
+            
+            displayFavorites();
+            displayHistory();
+            displayTrash();
+        }
+    } catch (error) {
+        console.error('Failed to move item to trash:', error);
+    }
+}
+
+// Restore from trash
+async function restoreFromTrash(itemKey) {
+    try {
+        const result = await chrome.storage.sync.get(['favorites', 'history', 'trash']);
+        const trash = result.trash || {};
+        
+        if (trash[itemKey]) {
+            const sourceType = trash[itemKey].sourceType;
+            const source = result[sourceType] || {};
+            
+            const itemData = { ...trash[itemKey] };
+            delete itemData.sourceType;
+            delete itemData.trashDate;
+            
+            source[itemKey] = itemData;
+            delete trash[itemKey];
+            
+            await chrome.storage.sync.set({
+                [sourceType]: source,
+                trash: trash
+            });
+
+            if (sourceType === 'favorites') {
+                await notifyContentScript('favorited', { pageTitle: itemKey });
+            }
+            
+            displayFavorites();
+            displayHistory();
+            displayTrash();
+        }
+    } catch (error) {
+        console.error('Failed to restore item from trash:', error);
+    }
+}
+
 // Display favorites list
 async function displayFavorites() {
     try {
@@ -89,11 +172,7 @@ async function displayFavorites() {
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.innerHTML = '&times;';
-            removeBtn.onclick = async () => {
-                delete favorites[pageTitle];
-                await chrome.storage.sync.set({ favorites });
-                displayFavorites();
-            };
+            removeBtn.onclick = () => moveToTrash(pageTitle, 'favorites');
             
             const linkContainer = document.createElement('div');
             linkContainer.appendChild(link);
@@ -153,20 +232,88 @@ async function displayHistory() {
             
             const meta = document.createElement('div');
             meta.className = 'meta';
-            meta.textContent = `Visits: ${data.visitCount}`;
-            meta.textContent += ` &middot; First visit: ${new Date(data.firstVisit).toLocaleDateString()}`;
-            meta.textContent += ` &middot; Last visit: ${new Date(data.lastVisit).toLocaleDateString()}`;
+            meta.innerHTML = `Visits: ${data.visitCount}`;
+            meta.innerHTML += ` &middot; First visit: ${new Date(data.firstVisit).toLocaleDateString()}`;
+            meta.innerHTML += ` &middot; Last visit: ${new Date(data.lastVisit).toLocaleDateString()}`;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.onclick = () => moveToTrash(pageTitle, 'history');
             
             const linkContainer = document.createElement('div');
             linkContainer.appendChild(link);
             linkContainer.appendChild(meta);
             
             item.appendChild(linkContainer);
+            item.appendChild(removeBtn);
             listElement.appendChild(item);
         });
     } catch (error) {
         console.error('Failed to load history:', error);
         document.getElementById('history-list').innerHTML = '<p>Error loading history</p>';
+    }
+}
+
+// Display trash list
+async function displayTrash() {
+    try {
+        const result = await chrome.storage.sync.get('trash');
+        const trash = result.trash || {};
+        const listElement = document.getElementById('trash-list');
+        
+        listElement.innerHTML = '';
+        
+        if (Object.keys(trash).length === 0) {
+            listElement.innerHTML = '<p>Trash is empty</p>';
+            return;
+        }
+
+        let entries = Object.entries(trash);
+        entries.sort((a, b) => new Date(b[1].trashDate) - new Date(a[1].trashDate));
+
+        entries.forEach(([pageTitle, data]) => {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            
+            const link = document.createElement('a');
+            link.href = data.url;
+            link.textContent = data.displayTitle;
+            link.target = '_blank';
+            
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.innerHTML = `<span class="trash-meta">From ${data.sourceType}</span> &middot; Deleted: ${new Date(data.trashDate).toLocaleDateString()}`;
+            
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'restore-btn';
+            restoreBtn.innerHTML = '&#x21BA;';
+            restoreBtn.onclick = () => restoreFromTrash(pageTitle);
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.onclick = async () => {
+                delete trash[pageTitle];
+                await chrome.storage.sync.set({ trash });
+                displayTrash();
+            };
+            
+            const linkContainer = document.createElement('div');
+            linkContainer.appendChild(link);
+            linkContainer.appendChild(meta);
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.appendChild(restoreBtn);
+            buttonContainer.appendChild(removeBtn);
+            
+            item.appendChild(linkContainer);
+            item.appendChild(buttonContainer);
+            listElement.appendChild(item);
+        });
+    } catch (error) {
+        console.error('Failed to load trash:', error);
+        document.getElementById('trash-list').innerHTML = '<p>Error loading trash</p>';
     }
 }
 
@@ -196,11 +343,17 @@ async function exportData() {
     }
 }
 
+async function debug() {
+    const result = await chrome.storage.sync.get('favorites');
+    console.log(result);
+}
+
 // Initialize popup
 document.addEventListener('DOMContentLoaded', () => {
     setupTabs();
     displayFavorites();
     displayHistory();
+    displayTrash();
     
     // Setup sort change handlers
     document.getElementById('favorites-sort').addEventListener('change', displayFavorites);

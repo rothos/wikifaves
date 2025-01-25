@@ -84,6 +84,18 @@
         .tab-content.active {
             display: block;
         }
+        .restore-btn {
+            color: #28a745;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            margin-right: 4px;
+        }
+        .trash-meta {
+            font-style: italic;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -92,6 +104,7 @@
     <div class="tabs">
         <button class="tab active" data-tab="favorites">Favorites</button>
         <button class="tab" data-tab="history">History</button>
+        <button class="tab" data-tab="trash">Trash</button>
     </div>
 
     <div id="favorites-content" class="tab-content active">
@@ -99,9 +112,9 @@
             <label>Sort by:</label>
             <select id="favorites-sort">
                 <option value="dateAdded">Date Added</option>
-                <option value="alpha">Alphabetically</option>
-                <option value="mostVisited">Most Visited</option>
                 <option value="recentlyVisited">Recently Visited</option>
+                <option value="mostVisited">Most Visited</option>
+                <option value="alpha">Alphabetically</option>
             </select>
         </div>
         <div id="favorites-list"></div>
@@ -110,14 +123,18 @@
     <div id="history-content" class="tab-content">
         <div class="sort-controls">
             <label>Sort by:</label>
-            <select id="history-sort">
-                <option value="alpha">Alphabetically</option>
-                <option value="mostVisited">Most Visited</option>
-                <option value="firstVisited">First Visited</option>
+            <select id="history-sort"></select>
                 <option value="recentlyVisited">Recently Visited</option>
+                <option value="firstVisited">First Visited</option>
+                <option value="mostVisited">Most Visited</option>
+                <option value="alpha">Alphabetically</option>
             </select>
         </div>
         <div id="history-list"></div>
+    </div>
+
+    <div id="trash-content" class="tab-content">
+        <div id="trash-list"></div>
     </div>
 
     <button id="export-btn" class="export-btn">Export Data</button>
