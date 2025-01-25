@@ -311,7 +311,7 @@ async function displayTrash() {
         listElement.innerHTML = '';
         
         if (Object.keys(trash).length === 0) {
-            listElement.innerHTML = '<p style="color: #888;">Trash is empty</p>';
+            listElement.innerHTML = '<p style="color: #888; margin: 20px; text-align: center;">Trash is empty</p>';
             return;
         }
 
@@ -366,7 +366,7 @@ async function displayTrash() {
 // Export data
 async function exportData() {
     try {
-        const result = await chrome.storage.local.get(['favorites', 'history']);
+        const result = await chrome.storage.local.get(['favorites', 'history', 'trash']);
         const data = {
             favorites: result.favorites || {},
             history: result.history || {},
