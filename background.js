@@ -1,3 +1,10 @@
+// Control content script initialization
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === "complete") {
+        chrome.tabs.sendMessage(tabId, { action: 'initializeContentScript' });
+    }
+});
+
 // Initialize context menu
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({

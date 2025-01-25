@@ -96,10 +96,8 @@ async function toggleFavorite(pageTitle) {
     try {
         const url = window.location.href;
 
-        if (!pageTitle) {
-            pageTitle = getPageTitleFromUrl(url);
-            if (!pageTitle) return;
-        }
+        pageTitle = getPageTitleFromUrl(url);
+        if (!pageTitle) return;
 
         const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
         const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
@@ -212,16 +210,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         updateFavoriteButton(true);
     } else if (message.action === 'toggleFavorite') {
         toggleFavorite();
+    } else if (message.action === 'initializeContentScript') {
+        initialize();
     }
 });
 
-// Initialize when page loads
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        addFavoriteButton();
-        trackPageVisit();
-    });
-} else {
+function initialize() {
     addFavoriteButton();
     trackPageVisit();
 }
