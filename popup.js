@@ -184,121 +184,113 @@ async function displayList(type, customSort = null) {
         let entries = Object.entries(items);
         
         // Apply sorting
-        if (customSort) {
-            entries.sort(customSort);
-        } else if (type !== 'trash') {
-            switch (sortMethod) {
-                case 'alpha':
-                    entries.sort(sortByAlpha);
-                    break;
-                case 'mostVisited':
-                    entries.sort(sortByMostVisited);
-                    break;
-                case 'recentlyVisited':
-                    entries.sort(sortByRecentlyVisited);
-                    break;
-                case 'firstVisited':
-                    entries.sort(sortByFirstVisited);
-                    break;
-                case 'dateAdded':
-                    entries.sort(sortByDateAdded);
-                    break;
-            }
-        } else {
-            // Default trash sorting by trash date
-            entries.sort((a, b) => new Date(b[1].trashDate) - new Date(a[1].trashDate));
-        }
+        entries = sortEntries(entries, type, customSort, sortMethod);
 
         entries.forEach(([pageTitle, data]) => {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            
-            const contentContainer = document.createElement('div');
-            contentContainer.className = 'content-container';
-            
-            if (type === 'trash') {
-                // Trash-specific display
-                const link = document.createElement('a');
-                link.href = data.url;
-                link.textContent = data.displayTitle;
-                link.target = '_blank';
-                link.className = 'title';
-                
-                const meta = document.createElement('div');
-                meta.className = 'meta';
-                meta.innerHTML = `<span class="trash-meta">From ${data.sourceType}</span> &middot; Deleted: ${new Date(data.trashDate).toLocaleDateString()}`;
-                
-                contentContainer.appendChild(link);
-                contentContainer.appendChild(meta);
-                
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = 'button-container';
-                
-                const restoreBtn = document.createElement('button');
-                restoreBtn.className = 'restore-btn';
-                restoreBtn.innerHTML = '&#x21BA;';
-                restoreBtn.onclick = () => restoreFromTrash(pageTitle);
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-btn';
-                removeBtn.innerHTML = '&times;';
-                removeBtn.onclick = async () => {
-                    const trash = items;
-                    delete trash[pageTitle];
-                    await chrome.storage.local.set({ trash });
-                    displayList('trash');
-                };
-                
-                buttonContainer.appendChild(restoreBtn);
-                buttonContainer.appendChild(removeBtn);
-                item.appendChild(contentContainer);
-                item.appendChild(buttonContainer);
-            } else {
-                // Favorites and History display
-                const linkWrapper = document.createElement('a');
-                linkWrapper.href = data.url;
-                linkWrapper.target = '_blank';
-                linkWrapper.className = 'link-wrapper';
-                
-                const titleSpan = document.createElement('span');
-                titleSpan.textContent = data.displayTitle;
-                titleSpan.className = 'title';
-                
-                const meta = document.createElement('div');
-                meta.className = 'meta';
-                
-                if (type === 'favorites') {
-                    meta.textContent = `Added: ${new Date(data.dateAdded).toLocaleDateString()}`;
-                    if (data.visitCount) {
-                        meta.textContent += ` • Visits: ${data.visitCount}`;
-                    }
-                } else {
-                    meta.innerHTML = `Visits: ${data.visitCount}`;
-                    meta.innerHTML += ` &middot; First visit: ${new Date(data.firstVisit).toLocaleDateString()}`;
-                    meta.innerHTML += ` &middot; Last visit: ${new Date(data.lastVisit).toLocaleDateString()}`;
-                }
-                
-                contentContainer.appendChild(titleSpan);
-                contentContainer.appendChild(meta);
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-btn';
-                removeBtn.innerHTML = '&times;';
-                removeBtn.onclick = (e) => {
-                    e.preventDefault();
-                    moveToTrash(pageTitle, type);
-                };
-                
-                linkWrapper.appendChild(contentContainer);
-                item.appendChild(linkWrapper);
-                item.appendChild(removeBtn);
-            }
-            
+            const item = createItemElement(pageTitle, data, type);
             listElement.appendChild(item);
         });
     } catch (error) {
         console.error(`Failed to load ${type}:`, error);
         document.getElementById(`${type}-list`).innerHTML = `<p>Error loading ${type}</p>`;
+    }
+}
+
+function createItemElement(pageTitle, data, type) {
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'content-container';
+    const linkWrapper = document.createElement('a');
+    linkWrapper.href = data.url;
+    linkWrapper.target = '_blank';
+    linkWrapper.className = 'link-wrapper';
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = data.displayTitle;
+    titleSpan.className = 'title';
+    
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = getMetaContent(data, type);
+    
+    contentContainer.appendChild(titleSpan);
+    contentContainer.appendChild(meta);
+    linkWrapper.appendChild(contentContainer);
+    item.appendChild(linkWrapper);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    
+    if (type === 'favorites' || type === 'history') {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = (e) => {
+            e.preventDefault();
+            moveToTrash(pageTitle, type);
+        };
+        buttonContainer.appendChild(removeBtn);
+    } else {
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'restore-btn';
+        restoreBtn.innerHTML = '&#x21BA;';
+        restoreBtn.onclick = () => restoreFromTrash(pageTitle);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = async () => {
+            const trash = items;
+            delete trash[pageTitle];
+            await chrome.storage.local.set({ trash });
+            displayList('trash');
+        };
+        
+        buttonContainer.appendChild(restoreBtn);
+        buttonContainer.appendChild(removeBtn);
+    }
+
+    item.appendChild(buttonContainer);
+    
+    return item;
+}
+
+function getMetaContent(data, type) {
+    switch (type) {
+        case 'favorites':
+            return `Added: ${new Date(data.dateAdded).toLocaleDateString()}${data.visitCount ? ` • Visits: ${data.visitCount}` : ''}`;
+        case 'history':
+            return `Visits: ${data.visitCount} &middot; First visit: ${new Date(data.firstVisit).toLocaleDateString()} &middot; Last visit: ${new Date(data.lastVisit).toLocaleDateString()}`;
+        case 'trash':
+            return `<span class="trash-meta">From ${data.sourceType}</span> &middot; Deleted: ${new Date(data.trashDate).toLocaleDateString()}`;
+        default:
+            return '';
+    }
+}
+
+function sortEntries(entries, type, customSort, sortMethod) {
+    if (customSort) {
+        return entries.sort(customSort);
+    } else if (type !== 'trash') {
+        switch (sortMethod) {
+            case 'alpha':
+                return entries.sort(sortByAlpha);
+            case 'mostVisited':
+                return entries.sort(sortByMostVisited);
+            case 'recentlyVisited':
+                return entries.sort(sortByRecentlyVisited);
+            case 'firstVisited':
+                return entries.sort(sortByFirstVisited);
+            case 'dateAdded':
+                return entries.sort(sortByDateAdded);
+            default:
+                return entries;
+        }
+    } else {
+        // Default trash sorting by trash date
+        return entries.sort((a, b) => new Date(b[1].trashDate) - new Date(a[1].trashDate));
     }
 }
 
