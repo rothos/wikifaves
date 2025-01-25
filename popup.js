@@ -402,9 +402,10 @@ async function importData(event) {
     reader.onload = async (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            const result = await chrome.storage.local.get(['favorites', 'history']);
+            const result = await chrome.storage.local.get(['favorites', 'history', 'trash']);
             const favorites = { ...result.favorites };
             const history = { ...result.history };
+            const trash = { ...result.trash };
 
             // Update favorites
             for (const [key, value] of Object.entries(data.favorites || {})) {
@@ -427,9 +428,15 @@ async function importData(event) {
                 }
             }
 
-            await chrome.storage.local.set({ favorites, history });
+            // Update trash
+            for (const [key, value] of Object.entries(data.trash || {})) {
+                trash[key] = value;
+            }
+
+            await chrome.storage.local.set({ favorites, history, trash });
             displayFavorites();
             displayHistory();
+            displayTrash();
             alert('Data imported successfully!');
         } catch (error) {
             console.error('Failed to import data:', error);
