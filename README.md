@@ -2,11 +2,11 @@
 
 ## Description
 
-WikiFaves is a Chrome extension that allows you to save and manage your favorite
-Wikipedia pages. The extension adds a button to Wikipedia pages that allows you
+WikiFaves is a Chrome extension that allows you to save and manage a list of your favorite
+Wikipedia pages. The extension adds a button to article pages (when you browse Wikipedia) that allows you
 to save the page as a favorite (or remove it from your favorites).
 
-I developed it as a test project because I wanted to experiment with
+I developed this extension as a test project because I wanted to experiment with
 using AI for coding. I chose this project in particular because I like the
 bookmarking feature on the Wikipedia mobile app and wish that
 the website had a similar feature.
