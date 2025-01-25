@@ -112,7 +112,7 @@
 
         .list-item {
             font-size: 1.22em;
-            padding: 8px;
+            padding: 0;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -123,14 +123,19 @@
             background-color: var(--hover-bg);
         }
 
-        .list-item a {
+        .list-item .link-wrapper {
             color: var(--link-color);
             text-decoration: none;
             flex-grow: 1;
-            margin-right: 8px;
+            padding: 8px;
+            display: block;
         }
 
-        .list-item a:hover {
+        .list-item .title {
+            color: var(--link-color);
+        }
+
+        .list-item .link-wrapper:hover .title {
             text-decoration: underline;
         }
 
@@ -138,6 +143,11 @@
             font-size: 0.7em;
             color: var(--meta-color);
             margin-top: 4px;
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
         }
 
         .remove-btn, .restore-btn {
