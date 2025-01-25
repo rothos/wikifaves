@@ -124,8 +124,25 @@ async function restoreFromTrash(itemKey) {
             const itemData = { ...trash[itemKey] };
             delete itemData.sourceType;
             delete itemData.trashDate;
-            
-            source[itemKey] = itemData;
+
+            // Check if the item already exists in the source
+            if (source[itemKey]) {
+                // Update existing entry for favorites
+                if (sourceType === 'favorites') {
+                    source[itemKey].dateAdded = new Date(Math.min(new Date(source[itemKey].dateAdded), new Date(itemData.dateAdded))).toISOString();
+                }
+                // Update existing entry for history
+                else if (sourceType === 'history') {
+                    source[itemKey].visitCount = (source[itemKey].visitCount || 0) + (itemData.visitCount || 0);
+                    source[itemKey].visits = [...(source[itemKey].visits || []), ...(itemData.visits || [])];
+                    source[itemKey].firstVisit = new Date(Math.min(new Date(source[itemKey].firstVisit), new Date(itemData.firstVisit))).toISOString();
+                    source[itemKey].lastVisit = new Date(Math.max(new Date(source[itemKey].lastVisit), new Date(itemData.lastVisit))).toISOString();
+                }
+            } else {
+                // If it doesn't exist, simply add it
+                source[itemKey] = itemData;
+            }
+
             delete trash[itemKey];
             
             await chrome.storage.local.set({
@@ -373,6 +390,55 @@ async function exportData() {
     }
 }
 
+// Import data
+async function importData(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        alert('No file selected.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            const result = await chrome.storage.local.get(['favorites', 'history']);
+            const favorites = { ...result.favorites };
+            const history = { ...result.history };
+
+            // Update favorites
+            for (const [key, value] of Object.entries(data.favorites || {})) {
+                if (favorites[key]) {
+                    favorites[key].dateAdded = new Date(Math.min(new Date(favorites[key].dateAdded), new Date(value.dateAdded))).toISOString();
+                } else {
+                    favorites[key] = value;
+                }
+            }
+
+            // Update history
+            for (const [key, value] of Object.entries(data.history || {})) {
+                if (history[key]) {
+                    history[key].visitCount = (history[key].visitCount || 0) + (value.visitCount || 0);
+                    history[key].visits = [...(history[key].visits || []), ...(value.visits || [])];
+                    history[key].firstVisit = new Date(Math.min(new Date(history[key].firstVisit), new Date(value.firstVisit))).toISOString();
+                    history[key].lastVisit = new Date(Math.max(new Date(history[key].lastVisit), new Date(value.lastVisit))).toISOString();
+                } else {
+                    history[key] = value;
+                }
+            }
+
+            await chrome.storage.local.set({ favorites, history });
+            displayFavorites();
+            displayHistory();
+            alert('Data imported successfully!');
+        } catch (error) {
+            console.error('Failed to import data:', error);
+            alert('Failed to import data: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
 async function debug() {
     const result = await chrome.storage.local.get('favorites');
     console.log(result);
@@ -395,4 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup export button
     document.getElementById('export-btn').addEventListener('click', exportData);
+    
+    // Setup import button
+    document.getElementById('import-btn').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = importData;
+        input.click();
+    });
 });
