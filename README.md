@@ -26,7 +26,7 @@ Here is the code that was used to generate the icons. It uses ImageMagick and
 assumes the Bodoni font is available on the system.
 
 ```
-magick -size 128x128 xc:transparent -fill gold -draw "polygon 64,0 85,43 128,48 96,80 104,128 64,104 24,128 32,80 0,48 43,43" -fill black -font "Bodoni-72-Book" -pointsize 80 -gravity center -draw "text 0,15 'W'" icons/icon128.png
+magick -size 128x128 xc:transparent -fill gold -draw "polygon 64,0 85,43 128,48 96,80 104,128 64,104 24,128 32,80 0,48 43,43" -fill black -font "Bodoni-72-Book" -pointsize 75 -gravity center -draw "text 0,16 'W'" icons/icon128.png
 
 magick icons/icon128.png -resize 16x16 -unsharp 1x1+0.5+0 icons/icon16.png
 magick icons/icon128.png -resize 32x32 -unsharp 1x1+0.5+0 icons/icon32.png
