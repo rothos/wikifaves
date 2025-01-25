@@ -3,13 +3,23 @@
 <head>
     <style>
         body {
-            width: 400px;
+            width: 500px;
             padding: 10px;
             font-family: Arial, sans-serif;
         }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .header img {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+        }
         h1 {
             font-size: 18px;
-            margin-bottom: 10px;
+            margin: 0;
         }
         .tabs {
             display: flex;
@@ -99,7 +109,10 @@
     </style>
 </head>
 <body>
-    <h1>WikiFaves</h1>
+    <div class="header">
+        <img src="icons/icon48.png" alt="WikiFaves">
+        <h1>WikiFaves</h1>
+    </div>
     
     <div class="tabs">
         <button class="tab active" data-tab="favorites">Favorites</button>
@@ -138,6 +151,7 @@
     </div>
 
     <button id="export-btn" class="export-btn">Export Data</button>
+    <script src="config.js"></script>
     <script src="popup.js"></script>
 </body>
 </html> 

@@ -5,7 +5,8 @@
     "description": "Save your favorite Wikipedia articles",
     "permissions": [
         "storage",
-        "activeTab"
+        "activeTab",
+        "contextMenus"
     ],
     "host_permissions": [
         "https://*.wikipedia.org/*"
@@ -18,12 +19,16 @@
             "128": "icons/icon128.png"
         }
     },
+    "background": {
+        "service_worker": "background.js"
+    },
     "content_scripts": [
         {
             "matches": [
                 "https://*.wikipedia.org/*"
             ],
             "js": [
+                "config.js",
                 "content.js"
             ]
         }

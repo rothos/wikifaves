@@ -25,9 +25,17 @@ async function checkFavoriteStatus() {
         const pageTitle = getPageTitleFromUrl(url);
         if (!pageTitle) return false;
         
-        const result = await chrome.storage.sync.get('favorites');
+        const result = await chrome.storage.local.get('favorites');
         const favorites = result.favorites || {};
-        return !!favorites[pageTitle];
+        const isFavorited = !!favorites[pageTitle];
+
+        // Update context menu
+        chrome.runtime.sendMessage({
+            action: 'updateContextMenu',
+            isFavorited
+        });
+
+        return isFavorited;
     } catch (error) {
         console.error('Failed to check favorite status:', error);
         return false;
@@ -46,7 +54,7 @@ async function trackPageVisit() {
         const visitTime = new Date().toISOString();
 
         // Get existing history
-        const result = await chrome.storage.sync.get('history');
+        const result = await chrome.storage.local.get('history');
         const history = result.history || {};
 
         // Check if this is a page reload
@@ -74,10 +82,57 @@ async function trackPageVisit() {
                 }
             }
 
-            await chrome.storage.sync.set({ history });
+            await chrome.storage.local.set({ history });
         }
     } catch (error) {
         console.error('Failed to track page visit:', error);
+    }
+}
+
+// Toggle favorite status
+async function toggleFavorite() {
+    try {
+        const url = window.location.href;
+        const pageTitle = getPageTitleFromUrl(url);
+        if (!pageTitle) return;
+
+        const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
+        const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
+        
+        const result = await chrome.storage.local.get('favorites');
+        const favorites = result.favorites || {};
+        const syncResult = await chrome.storage.sync.get('syncedFavorites');
+        const syncedFavorites = syncResult.syncedFavorites || {};
+
+        if (favorites[pageTitle]) {
+            delete favorites[pageTitle];
+            delete syncedFavorites[pageTitle];
+            updateFavoriteButton(false);
+        } else {
+            const dateAdded = new Date().toISOString();
+            favorites[pageTitle] = {
+                url: canonicalUrl,
+                displayTitle,
+                dateAdded
+            };
+            syncedFavorites[pageTitle] = {
+                dateAdded
+            };
+            updateFavoriteButton(true);
+        }
+
+        await Promise.all([
+            chrome.storage.local.set({ favorites }),
+            chrome.storage.sync.set({ syncedFavorites })
+        ]);
+
+        // Update context menu
+        chrome.runtime.sendMessage({
+            action: 'updateContextMenu',
+            isFavorited: !!favorites[pageTitle]
+        });
+    } catch (error) {
+        console.error('Failed to toggle favorite:', error);
     }
 }
 
@@ -85,21 +140,27 @@ async function trackPageVisit() {
 async function addFavoriteButton() {
     const url = window.location.href;
     const pageTitle = getPageTitleFromUrl(url);
-    if (!pageTitle) return; // Don't add button if we can't parse the page title
+    if (!pageTitle) return;
     
     const isFavorited = await checkFavoriteStatus();
+
+    // Get body background color
+    const getBodyBgColor = () => window.getComputedStyle(document.body).backgroundColor;
+
+    // Get initial body background color
+    let bodyBgColor = getBodyBgColor();
     
     // Create button
     const button = document.createElement('button');
     button.id = 'wikifaves-button';
-    button.innerHTML = isFavorited ? '★ Favorited' : '☆ Add to Favorites';
+    updateFavoriteButton(isFavorited, button);
     button.style.cssText = `
         position: fixed;
         bottom: 20px;
         left: 20px;
         padding: 8px 16px;
-        background-color: transparent;
-        border: 2px solid #ffeb3b;
+        background-color: ${bodyBgColor};
+        border: 2px solid ${WIKIFAVES_CONFIG.colors.starColor};
         border-radius: 4px;
         cursor: pointer;
         z-index: 1000;
@@ -107,55 +168,51 @@ async function addFavoriteButton() {
     `;
 
     // Add click handler
-    button.addEventListener('click', async () => {
-        try {
-            const canonicalUrl = `https://en.wikipedia.org/wiki/${pageTitle}`;
-            const displayTitle = document.getElementById('firstHeading')?.textContent?.replace(/\[edit\]/g, '') || pageTitle;
-            const result = await chrome.storage.sync.get('favorites');
-            const favorites = result.favorites || {};
-
-            if (favorites[pageTitle]) {
-                delete favorites[pageTitle];
-                button.innerHTML = '☆ Add to Favorites';
-                button.style.backgroundColor = 'transparent';
-            } else {
-                favorites[pageTitle] = {
-                    url: canonicalUrl,
-                    displayTitle,
-                    dateAdded: new Date().toISOString()
-                };
-                button.innerHTML = '★ Favorited';
-                button.style.backgroundColor = 'transparent';
-            }
-
-            await chrome.storage.sync.set({ favorites });
-        } catch (error) {
-            console.error('Failed to update favorites:', error);
+    button.addEventListener('click', toggleFavorite);
+    document.body.appendChild(button);
+    
+    // Update background color every 100ms for 1000ms (10 times)
+    let updateCount = 0;
+    const updateInterval = setInterval(() => {
+        if (updateCount < 10) {
+            bodyBgColor = getBodyBgColor();
+            button.style.backgroundColor = bodyBgColor;
+            updateCount++;
+        } else {
+            clearInterval(updateInterval);
         }
+    }, 100); // Update every 100ms
 
-        await chrome.storage.sync.set({ favorites });
+    // Monitor changes to the body background color
+    const observer = new MutationObserver(() => {
+        const newBgColor = getBodyBgColor();
+        if (newBgColor !== bodyBgColor) {
+            bodyBgColor = newBgColor;
+            button.style.backgroundColor = bodyBgColor;
+        }
     });
 
-    document.body.appendChild(button);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
 }
 
-// Add message listener for popup updates
+// Update favorite button appearance
+function updateFavoriteButton(isFavorited, button = document.getElementById('wikifaves-button')) {
+    if (button) {
+        button.innerHTML = isFavorited ? '★ Favorited' : '☆ Add to Favorites';
+    }
+}
+
+// Add message listener for popup updates and context menu
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const pageTitle = getPageTitleFromUrl(window.location.href);
     if (!pageTitle) return;
 
     if (message.action === 'unfavorited' && message.data.pageTitle === pageTitle) {
-        const button = document.getElementById('wikifaves-button');
-        if (button) {
-            button.innerHTML = '☆ Add to Favorites';
-            button.style.backgroundColor = 'transparent';
-        }
+        updateFavoriteButton(false);
     } else if (message.action === 'favorited' && message.data.pageTitle === pageTitle) {
-        const button = document.getElementById('wikifaves-button');
-        if (button) {
-            button.innerHTML = '★ Favorited';
-            button.style.backgroundColor = 'transparent';
-        }
+        updateFavoriteButton(true);
+    } else if (message.action === 'toggleFavorite') {
+        toggleFavorite();
     }
 });
 

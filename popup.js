@@ -55,7 +55,7 @@ async function notifyContentScript(action, data) {
 // Move item to trash
 async function moveToTrash(itemKey, sourceType) {
     try {
-        const result = await chrome.storage.sync.get(['favorites', 'history', 'trash']);
+        const result = await chrome.storage.local.get(['favorites', 'history', 'trash']);
         const trash = result.trash || {};
         const source = result[sourceType] || {};
         
@@ -67,12 +67,18 @@ async function moveToTrash(itemKey, sourceType) {
             };
             delete source[itemKey];
             
-            await chrome.storage.sync.set({ 
+            await chrome.storage.local.set({ 
                 [sourceType]: source,
                 trash: trash
             });
 
             if (sourceType === 'favorites') {
+                // Update synced favorites
+                const syncResult = await chrome.storage.sync.get('syncedFavorites');
+                const syncedFavorites = syncResult.syncedFavorites || {};
+                delete syncedFavorites[itemKey];
+                await chrome.storage.sync.set({ syncedFavorites });
+                
                 await notifyContentScript('unfavorited', { pageTitle: itemKey });
             }
             
@@ -88,7 +94,7 @@ async function moveToTrash(itemKey, sourceType) {
 // Restore from trash
 async function restoreFromTrash(itemKey) {
     try {
-        const result = await chrome.storage.sync.get(['favorites', 'history', 'trash']);
+        const result = await chrome.storage.local.get(['favorites', 'history', 'trash']);
         const trash = result.trash || {};
         
         if (trash[itemKey]) {
@@ -102,12 +108,20 @@ async function restoreFromTrash(itemKey) {
             source[itemKey] = itemData;
             delete trash[itemKey];
             
-            await chrome.storage.sync.set({
+            await chrome.storage.local.set({
                 [sourceType]: source,
                 trash: trash
             });
 
             if (sourceType === 'favorites') {
+                // Update synced favorites
+                const syncResult = await chrome.storage.sync.get('syncedFavorites');
+                const syncedFavorites = syncResult.syncedFavorites || {};
+                syncedFavorites[itemKey] = {
+                    dateAdded: itemData.dateAdded
+                };
+                await chrome.storage.sync.set({ syncedFavorites });
+                
                 await notifyContentScript('favorited', { pageTitle: itemKey });
             }
             
@@ -123,7 +137,7 @@ async function restoreFromTrash(itemKey) {
 // Display favorites list
 async function displayFavorites() {
     try {
-        const result = await chrome.storage.sync.get('favorites');
+        const result = await chrome.storage.local.get('favorites');
         const favorites = result.favorites || {};
         const listElement = document.getElementById('favorites-list');
         const sortMethod = document.getElementById('favorites-sort').value;
@@ -191,7 +205,7 @@ async function displayFavorites() {
 // Display history list
 async function displayHistory() {
     try {
-        const result = await chrome.storage.sync.get('history');
+        const result = await chrome.storage.local.get('history');
         const history = result.history || {};
         const listElement = document.getElementById('history-list');
         const sortMethod = document.getElementById('history-sort').value;
@@ -258,14 +272,14 @@ async function displayHistory() {
 // Display trash list
 async function displayTrash() {
     try {
-        const result = await chrome.storage.sync.get('trash');
+        const result = await chrome.storage.local.get('trash');
         const trash = result.trash || {};
         const listElement = document.getElementById('trash-list');
         
         listElement.innerHTML = '';
         
         if (Object.keys(trash).length === 0) {
-            listElement.innerHTML = '<p>Trash is empty</p>';
+            listElement.innerHTML = '<p style="color: #888;">Trash is empty</p>';
             return;
         }
 
@@ -295,7 +309,7 @@ async function displayTrash() {
             removeBtn.innerHTML = '&times;';
             removeBtn.onclick = async () => {
                 delete trash[pageTitle];
-                await chrome.storage.sync.set({ trash });
+                await chrome.storage.local.set({ trash });
                 displayTrash();
             };
             
@@ -320,10 +334,11 @@ async function displayTrash() {
 // Export data
 async function exportData() {
     try {
-        const result = await chrome.storage.sync.get(['favorites', 'history']);
+        const result = await chrome.storage.local.get(['favorites', 'history']);
         const data = {
             favorites: result.favorites || {},
             history: result.history || {},
+            trash: result.trash || {},
             exportDate: new Date().toISOString()
         };
         
@@ -339,12 +354,12 @@ async function exportData() {
         URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Failed to export data:', error);
-        alert('Failed to export data');
+        alert('Failed to export data: ' + error.message);
     }
 }
 
 async function debug() {
-    const result = await chrome.storage.sync.get('favorites');
+    const result = await chrome.storage.local.get('favorites');
     console.log(result);
 }
 
