@@ -85,8 +85,7 @@
         }
 
         .tab[data-tab="manage"] {
-            position: absolute;
-            right: 0;
+            margin-left: auto;
         }
 
         .sort-controls {
@@ -108,6 +107,13 @@
         #favorites-list, #history-list {
             max-height: 400px;
             overflow-y: auto;
+        }
+
+        .empty-message {
+            color: var(--meta-color);
+            font-size: .9em;
+            text-align: center;
+            margin: 4em 0 1.5em;
         }
 
         .list-item {
@@ -148,6 +154,10 @@
         .content-container {
             display: flex;
             flex-direction: column;
+        }
+
+        .button-container {
+            margin-right: 10px;
         }
 
         .remove-btn, .restore-btn {
